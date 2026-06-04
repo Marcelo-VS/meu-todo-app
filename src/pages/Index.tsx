@@ -1,27 +1,39 @@
 "use client";
 
-import React from 'react';
-import Navbar from "@/components/Navbar";
-import Hero from "@/components/Hero";
-import { MadeWithDyad } from "@/components/made-with-dyad";
+import React, { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import Auth from './Auth';
+import Home from './Home';
 
 const Index = () => {
-  return (
-    <div className="min-h-screen bg-white selection:bg-indigo-100 selection:text-indigo-900">
-      <Navbar />
-      <main>
-        <Hero />
-      </main>
-      <footer className="py-12 border-t border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">
-          <p className="text-gray-500 text-sm">
-            © 2024 DyadApp. Todos os direitos reservados.
-          </p>
-          <MadeWithDyad />
-        </div>
-      </footer>
-    </div>
-  );
+  const [session, setSession] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Busca a sessão inicial
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+    });
+
+    // Escuta mudanças na autenticação (login/logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  // Se houver sessão, mostra a Home, senão mostra o Auth
+  return session ? <Home /> : <Auth />;
 };
 
 export default Index;

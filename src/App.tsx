@@ -4,10 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
-import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -18,16 +15,10 @@ const App = () => (
       <Sonner position="top-center" />
       <BrowserRouter>
         <Routes>
+          {/* A rota raiz agora gerencia Auth e Home dinamicamente */}
           <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route 
-            path="/home" 
-            element={
-              <ProtectedRoute>
-                <Home />
-              </ProtectedRoute>
-            } 
-          />
+          
+          {/* Mantemos o 404 para rotas inexistentes */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

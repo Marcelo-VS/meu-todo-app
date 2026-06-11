@@ -15,10 +15,10 @@ const App = () => (
       <Sonner position="top-center" />
       <BrowserRouter>
         <Routes>
-          {/* A rota raiz agora gerencia Auth e Home dinamicamente */}
+          {/* A rota raiz gerencia Auth e Home dinamicamente via componente Index */}
           <Route path="/" element={<Index />} />
           
-          {/* Mantemos o 404 para rotas inexistentes */}
+          {/* Qualquer outra rota não mapeada cai no NotFound */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

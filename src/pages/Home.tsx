@@ -109,7 +109,7 @@ const Home = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     toast.success("Sessão encerrada.");
-    navigate('/');
+    navigate('/', { replace: true });
   };
 
   return (

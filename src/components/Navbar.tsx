@@ -3,15 +3,17 @@
 import React from 'react';
 import { Rocket, Menu, X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { useNavigate } from 'react-router-dom';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = React.useState(false);
+  const navigate = useNavigate();
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-indigo-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
             <div className="bg-indigo-600 p-2 rounded-xl">
               <Rocket className="text-white w-5 h-5" />
             </div>
@@ -21,10 +23,10 @@ const Navbar = () => {
           </div>
           
           <div className="hidden md:flex items-center gap-8">
-            <a href="#" className="text-sm font-medium text-gray-600 hover:text-indigo-600 transition-colors">Início</a>
+            <button onClick={() => navigate('/')} className="text-sm font-medium text-gray-600 hover:text-indigo-600 transition-colors">Início</button>
             <a href="#" className="text-sm font-medium text-gray-600 hover:text-indigo-600 transition-colors">Recursos</a>
             <a href="#" className="text-sm font-medium text-gray-600 hover:text-indigo-600 transition-colors">Sobre</a>
-            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full px-6">
+            <Button onClick={() => navigate('/')} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full px-6">
               Começar
             </Button>
           </div>
@@ -40,10 +42,10 @@ const Navbar = () => {
       {/* Mobile menu */}
       {isOpen && (
         <div className="md:hidden bg-white border-b border-indigo-50 p-4 space-y-4">
-          <a href="#" className="block text-base font-medium text-gray-600">Início</a>
+          <button onClick={() => { navigate('/'); setIsOpen(false); }} className="block w-full text-left text-base font-medium text-gray-600">Início</button>
           <a href="#" className="block text-base font-medium text-gray-600">Recursos</a>
           <a href="#" className="block text-base font-medium text-gray-600">Sobre</a>
-          <Button className="w-full bg-indigo-600 text-white rounded-xl">Começar</Button>
+          <Button onClick={() => { navigate('/'); setIsOpen(false); }} className="w-full bg-indigo-600 text-white rounded-xl">Começar</Button>
         </div>
       )}
     </nav>

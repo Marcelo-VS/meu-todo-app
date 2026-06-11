@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,18 +23,25 @@ const Auth = () => {
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { error } = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: {
+            data: {
+              first_name: email.split('@')[0],
+            }
+          }
+        });
         if (error) throw error;
         toast.success("Cadastro realizado! Verifique seu e-mail.");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success("Bem-vindo de volta!");
-        // Removido navigate('/home') para evitar 404, a Index.tsx cuidará da troca de tela
-        navigate('/'); 
+        navigate('/'); // Redireciona para a raiz para evitar 404
       }
     } catch (error: any) {
-      toast.error(error.message || "Ocorreu um erro na autenticação.");
+      toast.error(error.message || "Erro na autenticação.");
     } finally {
       setLoading(false);
     }

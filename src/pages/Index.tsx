@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import Auth from './Auth';
 import Home from './Home';
 
@@ -10,13 +10,11 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Busca a sessão inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
     });
 
-    // Escuta mudanças na autenticação (login/logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
     });
@@ -32,7 +30,6 @@ const Index = () => {
     );
   }
 
-  // Se houver sessão, mostra a Home, senão mostra o Auth
   return session ? <Home /> : <Auth />;
 };
 

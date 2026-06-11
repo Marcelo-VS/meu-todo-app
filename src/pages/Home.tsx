@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LogOut, Plus, CheckCircle2, Circle, Loader2, Trash2 } from 'lucide-react';
@@ -21,6 +21,7 @@ const Home = () => {
   const [novoTitulo, setNovoTitulo] = useState('');
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [showInput, setShowInput] = useState(false);
 
   const fetchTarefas = async () => {
     try {
@@ -66,8 +67,9 @@ const Home = () => {
       if (error) throw error;
 
       setNovoTitulo('');
+      setShowInput(false);
       toast.success("Tarefa adicionada!");
-      fetchTarefas(); // Atualiza a lista na hora
+      fetchTarefas();
     } catch (error: any) {
       toast.error("Erro ao adicionar tarefa: " + error.message);
     } finally {
@@ -127,26 +129,38 @@ const Home = () => {
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-12">
-        <div className="mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Olá! 👋</h2>
-          <p className="text-gray-500">Gerencie suas tarefas diárias com facilidade.</p>
+        <div className="flex justify-between items-end mb-12">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Olá! 👋</h2>
+            <p className="text-gray-500">Gerencie suas tarefas reais do banco de dados.</p>
+          </div>
+          <Button 
+            onClick={() => setShowInput(!showInput)}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg shadow-indigo-200"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Nova Tarefa
+          </Button>
         </div>
 
-        <form onSubmit={handleAddTask} className="flex gap-2 mb-8">
-          <Input 
-            placeholder="O que precisa ser feito?" 
-            value={novoTitulo}
-            onChange={(e) => setNovoTitulo(e.target.value)}
-            className="rounded-xl border-indigo-100 focus:ring-indigo-500 h-12"
-          />
-          <Button 
-            type="submit" 
-            disabled={adding}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-6 h-12"
-          >
-            {adding ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
-          </Button>
-        </form>
+        {showInput && (
+          <form onSubmit={handleAddTask} className="flex gap-2 mb-8 animate-in fade-in slide-in-from-top-4 duration-300">
+            <Input 
+              placeholder="O que precisa ser feito?" 
+              value={novoTitulo}
+              onChange={(e) => setNovoTitulo(e.target.value)}
+              autoFocus
+              className="rounded-xl border-indigo-100 focus:ring-indigo-500 h-12"
+            />
+            <Button 
+              type="submit" 
+              disabled={adding}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-6 h-12"
+            >
+              {adding ? <Loader2 className="w-5 h-5 animate-spin" /> : "Salvar"}
+            </Button>
+          </form>
+        )}
 
         <div className="space-y-4">
           {loading ? (
@@ -155,7 +169,7 @@ const Home = () => {
             </div>
           ) : tarefas.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
-              <p className="text-gray-400">Nenhuma tarefa encontrada. Comece adicionando uma acima!</p>
+              <p className="text-gray-400">Nenhuma tarefa encontrada. Clique em "Nova Tarefa" para começar!</p>
             </div>
           ) : (
             tarefas.map((task) => (

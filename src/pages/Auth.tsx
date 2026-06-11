@@ -30,7 +30,8 @@ const Auth = () => {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success("Bem-vindo de volta!");
-        navigate('/home');
+        // Removido navigate('/home') para evitar 404, a Index.tsx cuidará da troca de tela
+        navigate('/'); 
       }
     } catch (error: any) {
       toast.error(error.message || "Ocorreu um erro na autenticação.");

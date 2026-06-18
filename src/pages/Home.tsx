@@ -5,6 +5,7 @@ export default function Home() {
   const [tarefas, setTarefas] = useState<any[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
 
+  // 1. CARREGA AS TAREFAS DO BANCO DE DADOS
   useEffect(() => {
     async function carregarDados() {
       const { data: { user } } = await supabase.auth.getUser();
@@ -17,20 +18,24 @@ export default function Home() {
     carregarDados();
   }, []);
 
+  // 2. ADICIONA NOVA TAREFA
   async function adicionarTarefa() {
     const tituloDigitado = prompt('Digite o nome da nova tarefa:');
     if (!tituloDigitado || !userId) return;
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('tarefas')
       .insert([{ titulo: tituloDigitado, user_id: userId, concluido: false }])
       .select();
 
     if (data && data.length > 0) {
-      setTarefas([...tarefas, data]);
+      setTarefas([...tarefas, data[0]]);
+    } else if (error) {
+      alert('Erro ao adicionar: ' + error.message);
     }
   }
 
+  // 3. MARCAR COMO CONCLUÍDO (CHECKBOX)
   async function alternarConcluido(id: number, statusAtual: boolean) {
     const { error } = await supabase
       .from('tarefas')
@@ -57,6 +62,8 @@ export default function Home() {
 
     if (!error) {
       setTarefas(tarefas.map(t => t.id === id ? { ...t, titulo: novoTitulo } : t));
+    } else {
+      alert('Erro ao editar: ' + error.message);
     }
   }
 
@@ -72,6 +79,8 @@ export default function Home() {
 
     if (!error) {
       setTarefas(tarefas.filter(t => t.id !== id));
+    } else {
+      alert('Erro ao excluir: ' + error.message);
     }
   }
 
@@ -82,6 +91,7 @@ export default function Home() {
 
   return (
     <div style={{ backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif' }}>
+      {/* BARRA SUPERIOR */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 40px', backgroundColor: '#fff', borderBottom: '1px solid #e2e8f0' }}>
         <h3 style={{ color: '#1e293b', margin: 0 }}>Minhas Tarefas</h3>
         <button onClick={handleLogout} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -90,6 +100,7 @@ export default function Home() {
       </div>
 
       <div style={{ maxWidth: '600px', margin: '40px auto', padding: '0 20px' }}>
+        {/* TITULO CENTRAL */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
           <div>
             <h1 style={{ margin: '0 0 5px 0', color: '#0f172a' }}>Olá! 👋</h1>
@@ -100,6 +111,7 @@ export default function Home() {
           </button>
         </div>
 
+        {/* LISTAGEM DE TAREFAS */}
         <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '10px 20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
           {tarefas.length === 0 ? (
             <p style={{ color: '#64748b', textAlign: 'center', padding: '20px 0' }}>Nenhuma tarefa encontrada. Adicione uma acima!</p>
@@ -107,15 +119,17 @@ export default function Home() {
             tarefas.map(t => (
               <div key={t.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid #f1f5f9' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <input type="checkbox" checked={t.concluido} onChange={() => alternarConcluido(t.id, t.concluido)} />
-                  <span style={{ color: t.concluido ? '#94a3b8' : '#334155', textDecoration: t.concluido ? 'line-through' : 'none' }}>{t.titulo}</span>
+                  <input type="checkbox" checked={t.concluido} onChange={() => alternarConcluido(t.id, t.concluido)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
+                  <span style={{ color: t.concluido ? '#94a3b8' : '#334155', textDecoration: t.concluido ? 'line-through' : 'none', fontSize: '16px' }}>
+                    {t.titulo}
+                  </span>
                 </div>
                 
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={() => editarTarefa(t.id, t.titulo)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>
+                <div style={{ display: 'flex', gap: '15px' }}>
+                  <button onClick={() => editarTarefa(t.id, t.titulo)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }} title="Editar">
                     ✏️
                   </button>
-                  <button onClick={() => excluirTarefa(t.id, t.titulo)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>
+                  <button onClick={() => excluirTarefa(t.id, t.titulo)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }} title="Excluir">
                     🗑️
                   </button>
                 </div>

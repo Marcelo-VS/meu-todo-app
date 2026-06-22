@@ -5,7 +5,6 @@ export default function Home() {
   const [tarefas, setTarefas] = useState<any[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // 1. CARREGA AS TAREFAS DO BANCO DE DADOS
   useEffect(() => {
     async function carregarDados() {
       const { data: { user } } = await supabase.auth.getUser();
@@ -18,69 +17,38 @@ export default function Home() {
     carregarDados();
   }, []);
 
-  // 2. ADICIONA NOVA TAREFA
   async function adicionarTarefa() {
     const tituloDigitado = prompt('Digite o nome da nova tarefa:');
     if (!tituloDigitado || !userId) return;
 
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('tarefas')
       .insert([{ titulo: tituloDigitado, user_id: userId, concluido: false }])
       .select();
 
     if (data && data.length > 0) {
-      setTarefas([...tarefas, data[0]]);
-    } else if (error) {
-      alert('Erro ao adicionar: ' + error.message);
+      setTarefas([...tarefas, data]);
     }
   }
 
-  // 3. MARCAR COMO CONCLUÍDO (CHECKBOX)
-  async function alternarConcluido(id: number, statusAtual: boolean) {
-    const { error } = await supabase
-      .from('tarefas')
-      .update({ concluido: !statusAtual })
-      .eq('id', id);
-
-    if (!error) {
-      setTarefas(tarefas.map(t => t.id === id ? { ...t, concluido: !statusAtual } : t));
-    }
-  }
-
-  // REQUISITO 3.1: EDITAR COM CONFIRMAÇÃO OBRIGATÓRIA
-  async function editarTarefa(id: number, tituloAtual: string) {
-    const certeza = window.confirm(`Tem certeza que deseja editar a tarefa "${tituloAtual}"?`);
-    if (!certeza) return; 
-
-    const novoTitulo = prompt('Digite o novo nome da tarefa:', tituloAtual);
-    if (!novoTitulo || novoTitulo.trim() === '') return;
-
-    const { error } = await supabase
-      .from('tarefas')
-      .update({ titulo: novoTitulo })
-      .eq('id', id);
-
-    if (!error) {
-      setTarefas(tarefas.map(t => t.id === id ? { ...t, titulo: novoTitulo } : t));
-    } else {
-      alert('Erro ao editar: ' + error.message);
-    }
-  }
-
-  // REQUISITO 3.2: EXCLUIR COM CONFIRMAÇÃO OBRIGATÓRIA
-  async function excluirTarefa(id: number, titulo: string) {
-    const certeza = window.confirm(`Tem certeza que deseja excluir a tarefa "${titulo}"?`);
+  // REQUISITO 2: SOFT DELETE COM CONFIRMAÇÃO DO USUÁRIO
+  async function aplicarSoftDelete(id: number) {
+    const certeza = window.confirm("Tem certeza que deseja enviar esta tarefa para a lixeira (Soft Delete)?");
     if (!certeza) return;
 
-    const { error } = await supabase
-      .from('tarefas')
-      .delete()
-      .eq('id', id);
-
+    // Reaproveita a coluna 'concluido' como TRUE para marcar que foi para a lixeira
+    const { error } = await supabase.from('tarefas').update({ concluido: true }).eq('id', id);
     if (!error) {
-      setTarefas(tarefas.filter(t => t.id !== id));
-    } else {
-      alert('Erro ao excluir: ' + error.message);
+      setTarefas(tarefas.map(t => t.id === id ? { ...t, concluido: true } : t));
+    }
+  }
+
+  // REQUISITO 2: REVERTER O SOFT DELETE (RETORNAR PARA A LISTA ATIVA)
+  async function reverterSoftDelete(id: number) {
+    // Volta a coluna 'concluido' para FALSE (retorna para as ativas)
+    const { error } = await supabase.from('tarefas').update({ concluido: false }).eq('id', id);
+    if (!error) {
+      setTarefas(tarefas.map(t => t.id === id ? { ...t, concluido: false } : t));
     }
   }
 
@@ -89,50 +57,60 @@ export default function Home() {
     window.location.reload();
   }
 
+  // SEPARA AS TAREFAS EM DUAS LISTAS DIFERENTES NA TELA
+  const tarefasAtivas = tarefas.filter(t => !t.concluido);
+  const tarefasDeletadas = tarefas.filter(t => t.concluido);
+
   return (
-    <div style={{ backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif' }}>
-      {/* BARRA SUPERIOR */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 40px', backgroundColor: '#fff', borderBottom: '1px solid #e2e8f0' }}>
-        <h3 style={{ color: '#1e293b', margin: 0 }}>Minhas Tarefas</h3>
-        <button onClick={handleLogout} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
-          ➔ Sair
+    <div style={{ backgroundColor: '#0f172a', minHeight: '100vh', fontFamily: 'sans-serif', color: '#f8fafc' }}>
+      {/* REQUISITO 1: NOVO ESTILO VISUAL E LAYOUT */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 40px', backgroundColor: '#312e81', borderBottom: '2px solid #4338ca' }}>
+        <h3 style={{ color: '#fff', margin: 0, letterSpacing: '1px' }}>🎯 Workspace ToDo - Infinity</h3>
+        <button onClick={handleLogout} style={{ backgroundColor: '#ef4444', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
+          Sair
         </button>
       </div>
 
-      <div style={{ maxWidth: '600px', margin: '40px auto', padding: '0 20px' }}>
-        {/* TITULO CENTRAL */}
+      <div style={{ maxWidth: '700px', margin: '40px auto', padding: '0 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
           <div>
-            <h1 style={{ margin: '0 0 5px 0', color: '#0f172a' }}>Olá! 👋</h1>
-            <p style={{ margin: 0, color: '#64748b' }}>Gerencie suas tarefas reais do banco de dados.</p>
+            <h1 style={{ margin: '0 0 5px 0', color: '#818cf8' }}>Painel de Tarefas IX</h1>
+            <p style={{ margin: 0, color: '#94a3b8' }}>Sistema com suporte a Soft Delete e Restauração.</p>
           </div>
-          <button onClick={adicionarTarefa} style={{ padding: '12px 24px', backgroundColor: '#1d4ed8', color: '#fff', border: 'none', borderRadius: '50px', cursor: 'pointer', fontWeight: 'bold' }}>
-            + Nova Tarefa
+          <button onClick={adicionarTarefa} style={{ padding: '12px 24px', backgroundColor: '#4f46e5', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px' }}>
+            + Criar Tarefa
           </button>
         </div>
 
-        {/* LISTAGEM DE TAREFAS */}
-        <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '10px 20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-          {tarefas.length === 0 ? (
-            <p style={{ color: '#64748b', textAlign: 'center', padding: '20px 0' }}>Nenhuma tarefa encontrada. Adicione uma acima!</p>
+        {/* LISTA 1: TAREFAS ATIVAS */}
+        <div style={{ backgroundColor: '#1e293b', borderRadius: '12px', padding: '20px', marginBottom: '30px', border: '1px solid #334155' }}>
+          <h3 style={{ margin: '0 0 15px 0', color: '#22c55e', borderBottom: '1px solid #334155', paddingBottom: '10px' }}>📋 Tarefas Ativas</h3>
+          {tarefasAtivas.length === 0 ? (
+            <p style={{ color: '#64748b', textAlign: 'center' }}>Nenhuma tarefa ativa no momento.</p>
           ) : (
-            tarefas.map(t => (
-              <div key={t.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid #f1f5f9' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <input type="checkbox" checked={t.concluido} onChange={() => alternarConcluido(t.id, t.concluido)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
-                  <span style={{ color: t.concluido ? '#94a3b8' : '#334155', textDecoration: t.concluido ? 'line-through' : 'none', fontSize: '16px' }}>
-                    {t.titulo}
-                  </span>
-                </div>
-                
-                <div style={{ display: 'flex', gap: '15px' }}>
-                  <button onClick={() => editarTarefa(t.id, t.titulo)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }} title="Editar">
-                    ✏️
-                  </button>
-                  <button onClick={() => excluirTarefa(t.id, t.titulo)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }} title="Excluir">
-                    🗑️
-                  </button>
-                </div>
+            tarefasAtivas.map(t => (
+              <div key={t.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #334155' }}>
+                <span style={{ fontSize: '16px' }}>{t.titulo}</span>
+                <button onClick={() => aplicarSoftDelete(t.id)} style={{ padding: '6px 12px', backgroundColor: '#b91c1c', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                  🗑️ Soft Delete
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* LISTA 2: LIXEIRA (SOFT DELETE) */}
+        <div style={{ backgroundColor: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
+          <h3 style={{ margin: '0 0 15px 0', color: '#f59e0b', borderBottom: '1px solid #334155', paddingBottom: '10px' }}>♻️ Lixeira (Tarefas Excluídas)</h3>
+          {tarefasDeletadas.length === 0 ? (
+            <p style={{ color: '#64748b', textAlign: 'center' }}>Lixeira vazia.</p>
+          ) : (
+            tarefasDeletadas.map(t => (
+              <div key={t.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #334155', opacity: 0.7 }}>
+                <span style={{ fontSize: '16px', textDecoration: 'line-through', color: '#94a3b8' }}>{t.titulo}</span>
+                <button onClick={() => reverterSoftDelete(t.id)} style={{ padding: '6px 12px', backgroundColor: '#d97706', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+                  🔄 Restaurar / Reverter
+                </button>
               </div>
             ))
           )}
